@@ -20,6 +20,14 @@ jobs:
         with:
           node-version: 22
 
+      - name: Download official Real-ESRGAN NCNN/Vulkan engine
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path resources/engine | Out-Null
+          Invoke-WebRequest -Uri "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip" -OutFile "$env:RUNNER_TEMP\realesrgan.zip"
+          Expand-Archive -LiteralPath "$env:RUNNER_TEMP\realesrgan.zip" -DestinationPath "resources/engine" -Force
+          Remove-Item "$env:RUNNER_TEMP\realesrgan.zip" -Force
+
       - name: Install dependencies
         run: npm install
 
@@ -29,6 +37,6 @@ jobs:
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: WebUpscayl-Windows
+          name: WebUpscayl-Windows-v1.0.1
           path: release/*
           if-no-files-found: error
