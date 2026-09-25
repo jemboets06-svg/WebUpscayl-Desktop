@@ -1,0 +1,8 @@
+WebUpscayl Desktop - Third Party Notice
+
+Real-ESRGAN
+Copyright (c) 2021 Tencent ARC Lab and contributors.
+Project: https://github.com/xinntao/Real-ESRGAN
+License: MIT.
+
+The application downloads the Windows NCNN/Vulkan portable package from the official Real-ESRGAN release at first run.
