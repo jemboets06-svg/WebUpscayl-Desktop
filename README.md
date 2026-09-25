@@ -21,19 +21,22 @@ Desktop Windows 64-bit batch AI image upscaler, designed around the workflow of 
 The bundled Real-ESRGAN NCNN/Vulkan executable accepts JPG, PNG and WebP input.
 
 ## AI engine
-The application downloads the official Windows portable Real-ESRGAN NCNN/Vulkan package on first use:
-https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip
+The Windows installer now bundles the official Real-ESRGAN NCNN/Vulkan Windows engine, so the installed application is ready to use without a first-run engine download. A fallback download is retained for development builds.
 
-The downloaded engine is stored in the user's local application data and reused on later runs.
+Source engine: https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.2.5.0
 
 ## Build on GitHub
 GitHub Actions workflow: .github/workflows/build-windows.yml
 
 Run manually from the Actions tab. The workflow produces:
-- WebUpscayl-Desktop-1.0.0-x64.exe
+- WebUpscayl-Desktop-1.0.1-x64.exe
 - WebUpscayl-Desktop-1.0.0-portable-x64.exe
 
 No VS Code is required for end users. The final EXE installer is the intended distribution format.
 
 ## License
 MIT for this application code. Real-ESRGAN remains third-party software under its upstream license.
+
+## Scaling behavior
+
+For general photos, 4x uses `realesrgan-x4plus`. The 2x workflow uses the same NCNN x4plus model with `-s 2`, matching the way Upscayl invokes its NCNN backend; the official NCNN executable's bundled model list does not include `RealESRGAN_x2plus`. The separate `RealESRGAN_x2plus` model exists in the main Real-ESRGAN project, but is not a built-in model of the official 0.2.5.0 NCNN Windows package.
