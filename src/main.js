@@ -72,28 +72,27 @@ function outputPathFor(inputPath, inputRoot, outputRoot, prefix, scale, format) 
 }
 
 function findEngineExe() {
-  try {
-    const direct = [
-      path.join(ENGINE_ROOT, 'realesrgan-ncnn-vulkan-20220424-windows', 'realesrgan-ncnn-vulkan.exe'),
-      path.join(ENGINE_ROOT, 'realesrgan-ncnn-vulkan.exe')
-    ];
-    for (const p of direct) if (fs.existsSync(p)) return p;
-    function walk(dir, depth) {
-      if (depth > 4) return null;
-      for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, item.name);
-        if (item.isFile() && item.name.toLowerCase() === 'realesrgan-ncnn-vulkan.exe') return full;
-        if (item.isDirectory()) {
-          const hit = walk(full, depth + 1);
-          if (hit) return hit;
-        }
+  const roots = [BUNDLED_ENGINE_ROOT, ENGINE_ROOT];
+  function walk(dir, depth) {
+    if (!dir || !fs.existsSync(dir) || depth > 5) return null;
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return null; }
+    for (const item of entries) {
+      const full = path.join(dir, item.name);
+      if (item.isFile() && item.name.toLowerCase() === 'realesrgan-ncnn-vulkan.exe') return full;
+      if (item.isDirectory()) {
+        const hit = walk(full, depth + 1);
+        if (hit) return hit;
       }
-      return null;
     }
-    return walk(ENGINE_ROOT, 0);
-  } catch { return null; }
+    return null;
+  }
+  for (const root of roots) {
+    const hit = walk(root, 0);
+    if (hit) return hit;
+  }
+  return null;
 }
-
 function httpsDownload(url, destination) {
   return new Promise((resolve, reject) => {
     const request = https.get(url, { headers: { 'User-Agent': 'WebUpscaylDesktop/1.0' } }, response => {
