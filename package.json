@@ -1,6 +1,6 @@
 {
   "name": "webupscayl-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "WebUpscayl Desktop - local batch AI image upscaler using Real-ESRGAN NCNN/Vulkan.",
   "main": "src/main.js",
   "author": "WebUpscayl Desktop",
@@ -51,6 +51,12 @@
       "shortcutName": "WebUpscayl Desktop",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true
-    }
+    },
+    "extraResources": [
+      {
+        "from": "resources/engine",
+        "to": "engine"
+      }
+    ]
   }
 }
