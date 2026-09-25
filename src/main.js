@@ -5,11 +5,12 @@ const fsp = fs.promises;
 const https = require('https');
 const { spawn } = require('child_process');
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 const ENGINE_VERSION = '0.2.5.0';
 const ENGINE_URL = 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip';
 const ENGINE_ROOT = path.join(app.getPath('userData'), 'engine');
 const ENGINE_ARCHIVE = path.join(ENGINE_ROOT, 'realesrgan-engine.zip');
+const BUNDLED_ENGINE_ROOT = path.join(process.resourcesPath, 'engine');
 const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 
 let mainWindow = null;
@@ -135,7 +136,7 @@ async function expandZip(zipPath, destination) {
 async function ensureEngine() {
   const existing = findEngineExe();
   if (existing) {
-    send('engine-status', { state: 'ready', version: ENGINE_VERSION });
+    send('engine-status', { state: 'ready', version: ENGINE_VERSION, bundled: existing.startsWith(BUNDLED_ENGINE_ROOT) });
     return existing;
   }
   if (process.platform !== 'win32') throw new Error('Aplikasi ini menargetkan Windows 64-bit.');
@@ -234,13 +235,14 @@ ipcMain.handle('cancel-batch', () => {
 
 ipcMain.handle('start-batch', async (_event, options) => {
   stopRequested = false;
-  const { files = [], inputRoot, outputDir, model = 'photo', scale = 4, outputFormat = 'image/png', prefix = 'upscayl_', tile = 0 } = options || {};
+  const { files = [], inputRoot, outputDir, model = 'photo', scale = 4, outputFormat = 'image/png', prefix = 'upscayl_', tile = 0, performance = 'auto' } = options || {};
   if (!outputDir) throw new Error('Folder output belum dipilih.');
   if (!files.length) throw new Error('Tidak ada gambar dalam antrian.');
   const exe = await ensureEngine();
   await fsp.mkdir(outputDir, { recursive: true });
 
   const modelName = model === 'anime' ? 'realesrgan-x4plus-anime' : 'realesrgan-x4plus';
+  const jobs = performance === 'low' ? '1:1:1' : performance === 'fast' ? '1:3:2' : '1:2:2';
   const format = extensionFor(outputFormat);
   let done = 0;
   const results = [];
@@ -252,8 +254,15 @@ ipcMain.handle('start-batch', async (_event, options) => {
     send('batch-progress', { phase: 'processing', done, total: files.length, item: item.name, outputPath: target.file, percent: Math.round(done / files.length * 100) });
 
     try {
-      const args = ['-i', item.path, '-o', target.file, '-n', modelName, '-s', String(scale), '-t', String(tile), '-f', format];
-      await runEngine(exe, args, line => send('engine-log', { line }));
+      const args = ['-i', item.path, '-o', target.file, '-n', modelName, '-s', String(scale), '-t', String(tile), '-j', jobs, '-f', format];
+      await runEngine(exe, args, line => {
+        send('engine-log', { line });
+        const m = line.match(/(\\d+(?:\\.\\d+)?)%/);
+        if (m) {
+          const local = Math.max(0, Math.min(100, Number(m[1])));
+          send('batch-progress', { phase: 'processing', done, total: files.length, item: item.name, outputPath: target.file, percent: Math.min(99, Math.round(((done + local / 100) / files.length) * 100)) });
+        }
+      });
       if (!fs.existsSync(target.file)) throw new Error('Engine selesai tetapi file output tidak ditemukan.');
       const dims = getImageDimensions(target.file);
       done++;
