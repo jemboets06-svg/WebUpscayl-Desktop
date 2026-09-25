@@ -242,6 +242,7 @@ ipcMain.handle('start-batch', async (_event, options) => {
 
   const modelName = model === 'anime' ? 'realesrgan-x4plus-anime' : 'realesrgan-x4plus';
   const jobs = performance === 'low' ? '1:1:1' : performance === 'fast' ? '1:3:2' : '1:2:2';
+  const modelDir = path.join(path.dirname(exe), 'models');
   const format = extensionFor(outputFormat);
   let done = 0;
   const results = [];
@@ -253,7 +254,7 @@ ipcMain.handle('start-batch', async (_event, options) => {
     send('batch-progress', { phase: 'processing', done, total: files.length, item: item.name, outputPath: target.file, percent: Math.round(done / files.length * 100) });
 
     try {
-      const args = ['-i', item.path, '-o', target.file, '-n', modelName, '-s', String(scale), '-t', String(tile), '-j', jobs, '-f', format];
+      const args = ['-i', item.path, '-o', target.file, '-m', modelDir, '-n', modelName, '-s', String(scale), '-t', String(tile), '-j', jobs, '-f', format];
       await runEngine(exe, args, line => {
         send('engine-log', { line });
         const m = line.match(/(\\d+(?:\\.\\d+)?)%/);
